@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    
+
+<script>!function(){var e=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,t=localStorage.getItem("use-color-scheme")||"auto";("dark"===t||e&&"light"!==t)&&document.documentElement.classList.toggle("dark",!0)}()</script>
+
+<meta charset="utf-8" >
+
+<title>JVM内存结构</title>
+<meta name="keywords" content="JVM内存结构, Abstract">
+<meta name="description" content="jvm">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<link rel="shortcut icon" href="/favicon.ico">
+<link rel="stylesheet" href="/style/main.css">
+
+
+<link rel="stylesheet" href="/style/jquery.fancybox.min.css">
+
+
+
+
+    <link rel="stylesheet" href="/style/prism.css"/>
+
+
+
+
+  <meta name="generator" content="Hexo 5.4.2"></head>
+  <body>
+    <div id="app" class="main">
+
+<div class="site-header-container">
+  <div class="site-header">
+    <div class="left">
+      <a href="https://frozenboar.github.io">
+        <img class="avatar" src="/images/avatar.png" alt="logo" width="32px" height="32px">
+      </a>
+      <a href="https://frozenboar.github.io">
+        <h1 class="site-title">Abstract</h1>
+      </a>
+    </div>
+    <div class="right">
+        <i class="icon menu-switch icon-menu-outline" ></i>
+    </div>
+  </div>
+</div>
+
+<div class="menu-container" style="height: 0;opacity: 0;">
+<nav class="menu-list">
+  
+    
+      <a href="/" class="menu purple-link">
+        首页
+      </a>
+    
+  
+    
+      <a href="/tags" class="menu purple-link">
+        标签
+      </a>
+    
+  
+    
+      <a href="/archives" class="menu purple-link">
+        归档
+      </a>
+    
+  
+    
+      <a href="/about" class="menu purple-link">
+        关于
+      </a>
+    
+  
+    
+      <a href="/categories" class="menu purple-link">
+        分类
+      </a>
+    
+  
+</nav>
+</div>
+
+
+
+  <div class="content-container">
+    <div class="post-detail">
+      
+      <h2 class="post-title">JVM内存结构</h2>
+      <div class="post-info post-detail-info">
+        <span><i class="icon icon-calendar-outline"></i> 2023-04-02</span>
+        
+          <span>
+          <i class="icon icon-pricetags-outline"></i>
+            
+              <a href="/tags/java/">
+              java
+                
+                  ，
+                
+              </a>
+            
+              <a href="/tags/jvm/">
+              jvm
+                
+              </a>
+            
+          </span>
+        
+      </div>
+      <div class="post-content-wrapper">
+        <div class="post-content">
+          <h1 id="JVM内存结构"><a href="#JVM内存结构" class="headerlink" title="JVM内存结构"></a>JVM内存结构</h1><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>本文为个人理解总结整理，仅供参考。</p>
+<h2 id="一、概述"><a href="#一、概述" class="headerlink" title="一、概述"></a>一、概述</h2><p>JVM 内存布局规定了 Java 在运行过程中内存申请、分配、管理的策略，保证了 JVM 的高效稳定运行。<br>JVM在运行时的数据区，包含程序计数器、虚拟机栈、本地方法栈、堆内存与方法区。<br><a href="/./JVM%E5%86%85%E5%AD%98%E7%BB%93%E6%9E%84/1.png" data-fancybox="lightbox" data-caption="Untitled"><img src="/posts/27692/1.png" alt="Untitled"></a>  </p>
+<ul>
+<li>线程共享区域: 堆、方法区。这部分区域随虚拟机的启动&#x2F;关闭而创建&#x2F;销毁。</li>
+<li>线程私有区域：程序计数器、虚拟机栈、本地方法区。这部分区域的生命周期与线程相同, 依赖用户线程的启动&#x2F;结束 而 创建&#x2F;销毁。</li>
+</ul>
+<p><font color="red">需注意与<a href="./JVM%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B%EF%BC%88JMM%EF%BC%89.md">JVM内存模型（JMM）</a> JVM内存模型（JMM）的区别。</font></p>
+<h2 id="一、程序计数器"><a href="#一、程序计数器" class="headerlink" title="一、程序计数器"></a>一、程序计数器</h2><p>线程私有</p>
+<p>一块较小的内存空间，是当前线程所执行的字节码的行号指示器，每条线程都要有一个独立的程序计数器，这类内存也称为“线程私有”的内存。<br>正在执行 java 方法的话，计数器记录的是虚拟机字节码指令的地址（当前指令的地址）。如果还是 Native 方法，则为空。<br>这个内存区域是唯一一个在虚拟机中没有规定任何 OutOfMemoryError 情况的区域。</p>
+<h2 id="二、虚拟机栈（Stack）"><a href="#二、虚拟机栈（Stack）" class="headerlink" title="二、虚拟机栈（Stack）"></a>二、虚拟机栈（Stack）</h2><p>线程私有</p>
+<p>其内存储栈帧，一个队列的存储结构。每一个方法从调用直至执行完成的过程，就对应着一个栈帧在虚拟机栈中入栈到出栈的过程。</p>
+<h3 id="2-1-栈帧（Stack-Frame）"><a href="#2-1-栈帧（Stack-Frame）" class="headerlink" title="2.1.栈帧（Stack Frame）"></a>2.1.栈帧（Stack Frame）</h3><p>用来存储数据和部分过程结果的数据结构，同时也被用来处理动态链接(Dynamic Linking)、 方法返回值和异常分派（ Dispatch Exception）。栈帧随着方法调用而创建，随着方法结束而销毁（正常完成及抛出异常）。存在于栈内存中，每个方法在执行的同时都会创建一个栈帧（Stack Frame），用于存储局部变量表、操作数栈、动态链接、方法出口等信息。</p>
+<p><a href="/JVM%E5%86%85%E5%AD%98%E7%BB%93%E6%9E%84/2.png" data-fancybox="lightbox" data-caption="Untitled"><img src="/posts/27692/2.png" alt="Untitled"></a></p>
+<h2 id="三、本地方法栈（Native-Method-Stack）"><a href="#三、本地方法栈（Native-Method-Stack）" class="headerlink" title="三、本地方法栈（Native Method Stack）"></a>三、本地方法栈（Native Method Stack）</h2><p>线程私有</p>
+<p>本地方法栈则为Native方法服务。</p>
+<h2 id="四、堆内存（Heap）"><a href="#四、堆内存（Heap）" class="headerlink" title="四、堆内存（Heap）"></a>四、堆内存（Heap）</h2><p>线程共享</p>
+<p>创建的对象和数组（包括字符串常量与静态变量）都保存在 Java 堆内存中，也是垃圾收集器进行垃圾收集的最重要的内存区域。从 GC 的角度还可以细分为: 新生代(Eden 区、From Survivor 区和 To Survivor 区)和老年代（详情见下一节 4.JVM GC）</p>
+<h2 id="五、方法区（Method-Area）"><a href="#五、方法区（Method-Area）" class="headerlink" title="五、方法区（Method Area）"></a>五、方法区（Method Area）</h2><p>线程共享</p>
+<p>用于<strong>存储被 JVM 加载的类信息、常量、静态变量、即时编译器编译后的代码等数据</strong>。</p>
+<p>方法区**&#x2F;**永久代为Java8之前的JVM内存区域，本质上在堆内存内，属于堆内存的逻辑分区，本地内存空间与堆内存连续，但GC不会在主程序运行期对方法区&#x2F;永久代进行清理，所以这也导致了永久代的区域会随着加载的 Class 的增多而胀满，最终抛出 OOM 异常。</p>
+<p>元空间的本质和永久代类似，元空间与永久代之间最大的区别在于：元空间并不在虚拟机内存中，而是使用本地内存。</p>
+<h3 id="5-1-运行时常量池（Runtime-Constant-Pool）"><a href="#5-1-运行时常量池（Runtime-Constant-Pool）" class="headerlink" title="5.1.运行时常量池（Runtime Constant Pool）"></a>5.1.运行时常量池（<strong><strong>Runtime Constant Pool</strong></strong>）</h3><p>元空间内的一个区域，用于存放编译期生成的各种字面量和符号引用，这部分内容将在类加载后存放到元空间的运行时常量池中。</p>
+<h3 id="5-1-1-Java中的几个常量池"><a href="#5-1-1-Java中的几个常量池" class="headerlink" title="5.1-1.Java中的几个常量池"></a>5.1-1.Java中的几个常量池</h3><blockquote>
+<p>5.1-1.1.class常量池（Constant Pool Table）</p>
+</blockquote>
+<p>在class文件中，用于存放编译期生成的各种字面量和符号引用，这部分内容将在类加载后存放到元空间的运行时常量池中。 </p>
+<p>Java 虚拟机对 Class 文件的每一部分（包括常量池）的格式都有严格的规定，每一个字节用于存储哪种数据都必须符合规范上的要求，这样才会被虚拟机认可、装载和执行。</p>
+<p><a href="/JVM%E5%86%85%E5%AD%98%E7%BB%93%E6%9E%84/3.png" data-fancybox="lightbox" data-caption="Untitled"><img src="/posts/27692/3.png" alt="Untitled"></a></p>
+<blockquote>
+<p>5.1-1.2.字符串常量池（String Literal Pool）</p>
+</blockquote>
+<p>Java堆内存的一个区域，是在类加载完成，经过验证，<strong>准备阶段之后</strong>在<strong>堆</strong>中生成字符串对象实例，然后将该字符串对象实例的 <strong>引用值 存到 String Literal Pool 中</strong>。</p>
+<p>String Literal Pool 中存的是 <strong>引用值</strong>，而不是具体的实例对象，具体的实例对象是在堆中开辟的一块空间存放的。</p>
+<p>在 HotSpot VM 里实现的 String Literal Pool 功能的是一个 StringTable 类，它是一个哈希表，里面存的是 驻留字符（ 也就是用双引号括起来的部分）的 <strong>引用</strong>（而不是驻留字符串实例本身），也就是说在堆中的某些字符串实例被这个 StringTable 引用之后就等同被赋予了”驻留字符串”的身份。这个StringTable在每个 HotSpot VM 的实例只有一份，被所有的类共享。</p>
+<blockquote>
+<p>5.1-1.3.运行时常量池（Runtime Constant Pool）</p>
+</blockquote>
+<p>元空间内的一个区域，JVM在执行某个类的时候，必须经过加载、连接、初始化，而连接又包括验证、准备、解析三个阶段。而当类加载到内存中后，jvm就会将 <code>class常量池</code>中的内容存放到 <code>运行时常量池</code>中，由此可知，<code>运行时常量池</code>也是每个类都有一个。</p>
+
+        </div>
+        <div class="top-div">
+          <ol class="top-box"><li class="top-box-item top-box-level-1"><a class="top-box-link" href="#JVM%E5%86%85%E5%AD%98%E7%BB%93%E6%9E%84"><span class="top-box-text">JVM内存结构</span></a><ol class="top-box-child"><li class="top-box-item top-box-level-2"><a class="top-box-link" href="#%E5%89%8D%E8%A8%80"><span class="top-box-text">前言</span></a></li><li class="top-box-item top-box-level-2"><a class="top-box-link" href="#%E4%B8%80%E3%80%81%E6%A6%82%E8%BF%B0"><span class="top-box-text">一、概述</span></a></li><li class="top-box-item top-box-level-2"><a class="top-box-link" href="#%E4%B8%80%E3%80%81%E7%A8%8B%E5%BA%8F%E8%AE%A1%E6%95%B0%E5%99%A8"><span class="top-box-text">一、程序计数器</span></a></li><li class="top-box-item top-box-level-2"><a class="top-box-link" href="#%E4%BA%8C%E3%80%81%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%A0%88%EF%BC%88Stack%EF%BC%89"><span class="top-box-text">二、虚拟机栈（Stack）</span></a><ol class="top-box-child"><li class="top-box-item top-box-level-3"><a class="top-box-link" href="#2-1-%E6%A0%88%E5%B8%A7%EF%BC%88Stack-Frame%EF%BC%89"><span class="top-box-text">2.1.栈帧（Stack Frame）</span></a></li></ol></li><li class="top-box-item top-box-level-2"><a class="top-box-link" href="#%E4%B8%89%E3%80%81%E6%9C%AC%E5%9C%B0%E6%96%B9%E6%B3%95%E6%A0%88%EF%BC%88Native-Method-Stack%EF%BC%89"><span class="top-box-text">三、本地方法栈（Native Method Stack）</span></a></li><li class="top-box-item top-box-level-2"><a class="top-box-link" href="#%E5%9B%9B%E3%80%81%E5%A0%86%E5%86%85%E5%AD%98%EF%BC%88Heap%EF%BC%89"><span class="top-box-text">四、堆内存（Heap）</span></a></li><li class="top-box-item top-box-level-2"><a class="top-box-link" href="#%E4%BA%94%E3%80%81%E6%96%B9%E6%B3%95%E5%8C%BA%EF%BC%88Method-Area%EF%BC%89"><span class="top-box-text">五、方法区（Method Area）</span></a><ol class="top-box-child"><li class="top-box-item top-box-level-3"><a class="top-box-link" href="#5-1-%E8%BF%90%E8%A1%8C%E6%97%B6%E5%B8%B8%E9%87%8F%E6%B1%A0%EF%BC%88Runtime-Constant-Pool%EF%BC%89"><span class="top-box-text">5.1.运行时常量池（Runtime Constant Pool）</span></a></li><li class="top-box-item top-box-level-3"><a class="top-box-link" href="#5-1-1-Java%E4%B8%AD%E7%9A%84%E5%87%A0%E4%B8%AA%E5%B8%B8%E9%87%8F%E6%B1%A0"><span class="top-box-text">5.1-1.Java中的几个常量池</span></a></li></ol></li></ol></li></ol>
+        </div>
+      </div>
+    </div>
+
+    
+      <div class="next-post">
+        <a class="purple-link" href="/posts/17374/">
+          <h3 class="post-title">
+            下一篇：JVM
+          </h3>
+        </a>
+      </div>
+    
+  </div>
+
+
+
+
+<footer>
+<div class="site-footer">
+  <div class="social-container">
+    
+      
+        <a href="https://github.com/frozenboar" target="_blank">
+          <i class="icon icon-github"></i>
+        </a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  </div>
+  
+    Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> <a href="https://github.com/f-dong/hexo-theme-minimalism" target="_blank">Theme</a>
+  
+  
+  
+  
+  
+  
+</div>
+</footer>
+
+
+      </div>
+      
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jquery.fancybox.min.js"></script>
+
+
+<script id="hexo-configurations">
+    window.theme_config = {"image":{"lazyload_enable":false}};
+    window.is_post = true;
+  </script>
+
+<script src="/js/main.js"></script>
+
+
+
+
+
+    </div>
+  </body>
+</html>
+
